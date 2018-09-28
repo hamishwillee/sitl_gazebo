@@ -10,13 +10,12 @@
       <uri>model://ground_plane</uri>
     </include>
     <!-- An asphalt plane -->
-<!--
     <include>
       <uri>model://asphalt_plane</uri>
     </include>
---> 
+
    <include>
-      <uri>model://TF-G1</uri>
+      <uri>model://autogyro</uri>
     </include>
     <physics name='default_physics' default='0' type='ode'>
       <gravity>0 0 -9.8066</gravity>
@@ -39,18 +38,28 @@
       <real_time_update_rate>500</real_time_update_rate>
       <magnetic_field>6.0e-6 2.3e-5 -4.2e-5</magnetic_field>
     </physics>
+    <scene>
+      <ambient>50 50 50</ambient>
+      <background>20 20 20</background>
+      <shadows>false</shadows>
+      <sky>
+        <time>12</time>
+      </sky>
+    </scene>
     <gui fullscreen='0'>
       <camera name='user_camera'>
         <view_controller>orbit</view_controller>
         <projection_type>perspective</projection_type>
+        <!--
         <track_visual>
-          <name>plane</name>
-          <use_model_frame>true</use_model_frame>
+          <name>autogyro</name>
+          <use_model_frame>false</use_model_frame>
           <static>false</static>
           <min_dist>0</min_dist>
-          <max_dist>8</max_dist>
+          <max_dist>5</max_dist>
 	        <xyz> -2 0 0</xyz>
         </track_visual>
+      -->
       </camera>
     </gui>
   </world>

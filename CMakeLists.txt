@@ -120,6 +120,10 @@ endif()
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -Wno-deprecated-declarations")
 
+# Add parameter for debug mode if needed
+set(GAZEBO_CXX_FLAGS "${GAZEBO_CXX_FLAGS} -DCMAKE_BUILD_TYPE=Debug")
+MESSAGE(STATUS "GAZEBO PLUGIN BUILD PATH ${GAZEBO_CXX_FLAGS}")
+
 include(EnableC++XX)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GAZEBO_CXX_FLAGS} -Wno-deprecated-declarations")
 
