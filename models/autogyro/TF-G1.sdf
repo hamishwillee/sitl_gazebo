@@ -142,7 +142,7 @@
       <pose>0.23 0 0.065 0 1.57 0</pose>
       <inertial>
         <pose>0 0 0 0 0 0</pose>
-        <mass>0.005</mass>
+        <mass>0.2</mass>
         <inertia>
           <ixx>9.75e-07</ixx>
           <ixy>0</ixy>
@@ -235,7 +235,7 @@
     <link name='rotor'>
       <pose>0 0 0.38 0 0 0</pose>
       <inertial>
-        <mass>0.05</mass>
+        <mass>1.71</mass> <!-- 0.855 kg/blade -->
         <inertia>
           <ixx>1e-07</ixx>
           <ixy>0</ixy>
@@ -281,7 +281,7 @@
     <link name="left_rudder">
       <pose>-0.744 0.15 0.07 0 0 0 </pose>
       <inertial>
-        <mass>0.00000001</mass>
+        <mass>0.16</mass>
         <inertia>
           <ixx>0.000001</ixx>
           <ixy>0.0</ixy>
@@ -325,7 +325,7 @@
     <link name="right_rudder">
       <pose>-0.744 -0.15 0.07 0 0 0 </pose>
       <inertial>
-        <mass>0.00000001</mass>
+        <mass>0.16</mass>
         <inertia>
           <ixx>0.000001</ixx>
           <ixy>0.0</ixy>
