@@ -33,6 +33,16 @@
           <!--<friction>
             <ode/>
           </friction>-->
+            <friction>
+              <ode>
+                <!--
+                <mu>0.01</mu>
+                <mu2>0.01</mu2>
+              -->
+                <mu>0.001</mu>
+                <mu2>0.001</mu2>
+              </ode>
+            </friction>
         </surface>
       </collision>
       <visual name='base_link_visual'>
@@ -225,14 +235,14 @@
     <link name='rotor'>
       <pose>0 0 0.38 0 0 0</pose>
       <inertial>
-        <mass>0.5</mass>
+        <mass>0.05</mass>
         <inertia>
-          <ixx>9.75e-07</ixx>
+          <ixx>1e-07</ixx>
           <ixy>0</ixy>
           <ixz>0</ixz>
-          <iyy>0.000166704</iyy>
+          <iyy>1e-07</iyy>
           <iyz>0</iyz>
-          <izz>0.000167604</izz>
+          <izz>1e-07</izz>
         </inertia>
       </inertial>
       <collision name='rotor_collision'>
@@ -408,6 +418,7 @@
     <joint name='rotor_joint' type='revolute'>
       <child>rotor</child>
       <parent>rotor_pitch_connector</parent>
+     <!-- <parent>base_link</parent>-->
       <pose>0 0 0 0 0 0</pose>
       <axis>
         <xyz>0 0 1</xyz>
@@ -444,6 +455,10 @@
          <use_parent_model_frame>1</use_parent_model_frame>
       </axis>
     </joint>
+    <plugin name="rotor_model" filename="libgazebo_rotor_model.so">
+        <link_name>rotor</link_name>
+        <joint_name>rotor_joint</joint_name>
+    </plugin>
 
 <!--
     <plugin name="left_wing" filename="libLiftDragPlugin.so">
@@ -545,8 +560,8 @@
   -->
     <plugin name='propeller_motor' filename='libgazebo_motor_model.so'>
       <robotNamespace></robotNamespace>
-      <jointName>rotor_joint</jointName>
-      <linkName>rotor</linkName>
+      <jointName>propeller_joint</jointName>
+      <linkName>propeller</linkName>
       <turningDirection>cw</turningDirection>
       <timeConstantUp>0.0125</timeConstantUp>
       <timeConstantDown>0.025</timeConstantDown>
@@ -606,7 +621,6 @@
       <hil_state_level>false</hil_state_level>
       <motorSpeedCommandPubTopic>/gazebo/command/motor_speed</motorSpeedCommandPubTopic>
       <control_channels>
-        <!--
         <channel name="propeller">
           <input_index>4</input_index>
           <input_offset>0</input_offset>
@@ -616,10 +630,14 @@
           <joint_control_type>velocity</joint_control_type>
           <joint_name>propeller_joint</joint_name>
           <joint_control_pid>
-            <p>1</p>
+            <p>0.0005</p>
+            <i>0.00001</i>
+            <cmdMax>3000</cmdMax>
+            <cmdMin>-3000</cmdMin>
           </joint_control_pid>
         </channel>
--->
+
+<!--
         <channel name="rotor_channel_test">
           <input_index>4</input_index>
           <input_offset>0</input_offset>
@@ -635,6 +653,7 @@
             <cmdMin>-3000</cmdMin>
           </joint_control_pid>
         </channel>
+      -->
         <channel name="roll_channel">
           <input_index>2</input_index>
           <input_offset>0</input_offset>

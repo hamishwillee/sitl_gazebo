@@ -287,6 +287,7 @@ add_library(gazebo_mavlink_interface SHARED src/gazebo_mavlink_interface.cpp src
 add_library(gazebo_motor_model SHARED src/gazebo_motor_model.cpp)
 add_library(gazebo_multirotor_base_plugin SHARED src/gazebo_multirotor_base_plugin.cpp)
 add_library(gazebo_wind_plugin SHARED src/gazebo_wind_plugin.cpp)
+add_library(gazebo_rotor_model SHARED src/gazebo_rotor_model.cpp)
 
 set(plugins
   gazebo_geotagged_images_plugin
@@ -304,6 +305,7 @@ set(plugins
   gazebo_motor_model
   gazebo_multirotor_base_plugin
   gazebo_wind_plugin
+  gazebo_rotor_model
   )
 
 foreach(plugin ${plugins})
