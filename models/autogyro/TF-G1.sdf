@@ -1,7 +1,7 @@
 <sdf version='1.5'>
   <model name='autogyro'>
    <!-- <pose>0 0 0.246 0 0 0</pose>-->
-   <pose>0 0 1.546 0 0 0</pose>
+   <pose>0 0 0.18 0 0 0</pose>
     <link name='base_link'>
       <pose>0 0 0 0 0 0</pose>
       <inertial>
@@ -30,17 +30,10 @@
               <min_depth>0.01</min_depth>
             </ode>
           </contact>
-          <!--<friction>
-            <ode/>
-          </friction>-->
             <friction>
               <ode>
-                <!--
                 <mu>0.01</mu>
                 <mu2>0.01</mu2>
-              -->
-                <mu>0.001</mu>
-                <mu2>0.001</mu2>
               </ode>
             </friction>
         </surface>
@@ -191,60 +184,73 @@
         <inertial>
         <mass>0.0005</mass>
         <inertia>
-          <ixx>0.00001</ixx>
+          <ixx>0.001</ixx>
           <ixy>0</ixy>
           <ixz>0</ixz>
-          <iyy>0.00001</iyy>
+          <iyy>0.001</iyy>
           <iyz>0</iyz>
-          <izz>0.00001</izz>
+          <izz>0.001</izz>
         </inertia>
       </inertial>
-      <!--
+
       <visual name="rotor_pitch_connector_visual">
         <geometry>
           <box>
            <size>0.005 0.005 0.005</size>
           </box>
         </geometry>
+         <material>
+          <script>
+            <name>Gazebo/Purple</name>
+            <uri>__default__</uri>
+          </script>
+        </material>
       </visual>
-    -->
+
     </link>
     <link name="rotor_roll_connector">
       <pose>0 0 0.40 0 0 0</pose>
       <inertial>
         <mass>0.0005</mass>
         <inertia>
-          <ixx>0.00001</ixx>
+          <ixx>0.001</ixx>
           <ixy>0</ixy>
           <ixz>0</ixz>
-          <iyy>0.00001</iyy>
+          <iyy>0.001</iyy>
           <iyz>0</iyz>
-          <izz>0.00001</izz>
+          <izz>0.001</izz>
         </inertia>
       </inertial>
-      <!--
+
       <visual name="rotor_roll_connector_visual">
         <geometry>
           <box>
             <size>0.005 0.005 0.005</size>
           </box>
         </geometry>
+         <material>
+          <script>
+            <name>Gazebo/Red</name>
+            <uri>__default__</uri>
+          </script>
+        </material>
       </visual>
-    -->
     </link>
+
     <link name='rotor'>
-      <pose>0 0 0.38 0 0 0</pose>
+      <pose>0 0 0.48 0 0 0</pose>
       <inertial>
         <mass>1.71</mass> <!-- 0.855 kg/blade -->
         <inertia>
-          <ixx>1e-07</ixx>
+          <ixx>0.00025</ixx>
           <ixy>0</ixy>
           <ixz>0</ixz>
-          <iyy>1e-07</iyy>
+          <iyy>0.00025</iyy>
           <iyz>0</iyz>
-          <izz>1e-07</izz>
+          <izz>0.6</izz>
         </inertia>
       </inertial>
+      <!--
       <collision name='rotor_collision'>
         <pose>0.0 0 0.0 0 0 0</pose>
         <geometry>
@@ -262,6 +268,7 @@
           </friction>
         </surface>
       </collision>
+    -->
       <visual name='rotor_visual'>
         <geometry>
           <mesh>
@@ -278,6 +285,7 @@
       </visual>
       <gravity>0</gravity>
     </link> 
+
     <link name="left_rudder">
       <pose>-0.744 0.15 0.07 0 0 0 </pose>
       <inertial>
@@ -322,6 +330,7 @@
       </visual>
 -->
     </link>
+
     <link name="right_rudder">
       <pose>-0.744 -0.15 0.07 0 0 0 </pose>
       <inertial>
@@ -417,18 +426,33 @@
     </joint>
     <joint name='rotor_joint' type='revolute'>
       <child>rotor</child>
+ 
       <parent>rotor_pitch_connector</parent>
-     <!-- <parent>base_link</parent>-->
+    
+         <!--
+      <parent>rotor_roll_connector</parent>.
+    -->
       <pose>0 0 0 0 0 0</pose>
       <axis>
         <xyz>0 0 1</xyz>
-        <limit>
+          <limit>
           <lower>-1e+16</lower>
           <upper>1e+16</upper>
+         <!-- <effort>-0.5</effort>
+          <velocity>-1</velocity>
+        -->
         </limit>
+        <dynamics>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+          <damping>0.02</damping>
+          <friction>0.1</friction>
+        </dynamics>
+
         <use_parent_model_frame>1</use_parent_model_frame>
       </axis>
     </joint>
+
     <joint name='rotor_pitch_joint' type='revolute'>
       <parent>rotor_roll_connector</parent>
       <child>rotor_pitch_connector</child>
@@ -436,12 +460,17 @@
       <axis>
         <xyz>0 1 0</xyz>
         <limit>
+          <!--
           <lower>-0.087</lower>
           <upper>0.087</upper>
+      -->
+          <lower>-0.05</lower>
+          <upper>0.05</upper>
         </limit>
          <use_parent_model_frame>1</use_parent_model_frame>
       </axis>
     </joint>
+  
     <joint name='rotor_roll_joint' type='revolute'>
       <parent>base_link</parent>
       <child>rotor_roll_connector</child>
@@ -449,10 +478,27 @@
       <axis>
         <xyz>1 0 0</xyz>
         <limit>
+          <!--
           <lower>-0.087</lower>
           <upper>0.087</upper>
+        -->
+          <lower>-0.05</lower>
+          <upper>0.05</upper>
         </limit>
-         <use_parent_model_frame>1</use_parent_model_frame>
+       <physics>
+        <ode>
+          <implicit_spring_damper>1</implicit_spring_damper>
+        </ode>
+      </physics>
+
+ 
+         <dynamics>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+          <damping>0.5</damping>
+          <friction>0.5</friction>
+        </dynamics>
+
       </axis>
     </joint>
     <plugin name="rotor_model" filename="libgazebo_rotor_model.so">
@@ -558,6 +604,7 @@
       <link_name>rotor</link_name>
     </plugin>
   -->
+
     <plugin name='propeller_motor' filename='libgazebo_motor_model.so'>
       <robotNamespace></robotNamespace>
       <jointName>propeller_joint</jointName>
@@ -573,7 +620,7 @@
       <rotorDragCoefficient>8.06428e-05</rotorDragCoefficient>
       <rollingMomentCoefficient>1e-06</rollingMomentCoefficient>
       <motorSpeedPubTopic>/motor_speed/4</motorSpeedPubTopic>
-      <rotorVelocitySlowdownSim>10</rotorVelocitySlowdownSim>
+      <rotorVelocitySlowdownSim>20</rotorVelocitySlowdownSim>
     </plugin>
     <plugin name='gazebo_imu_plugin' filename='libgazebo_imu_plugin.so'>
       <robotNamespace></robotNamespace>
@@ -654,6 +701,7 @@
           </joint_control_pid>
         </channel>
       -->
+      <!--
         <channel name="roll_channel">
           <input_index>2</input_index>
           <input_offset>0</input_offset>
@@ -672,6 +720,7 @@
           <joint_control_type>position_kinematic</joint_control_type>
           <joint_name>rotor_pitch_joint</joint_name>
         </channel>
+      -->
         <channel name="left_rudder_channel">
           <input_index>0</input_index>
           <input_offset>0</input_offset>

@@ -25,6 +25,7 @@ namespace gazebo {
 		gzdbg << "Rotor model init \n";
 
 		test_mode_ = simple_spin;
+		test_simtime_latency_ = 10; // seconds before test is activated
 	}
 
 	GazeboRotorModel::~GazeboRotorModel(){
@@ -70,20 +71,25 @@ namespace gazebo {
 
 
 	void GazeboRotorModel::OnUpdate(){
-		switch(test_mode_){
-			case simple_ground_ride: SimpleGroundRideTest(); break;
-			case simple_spin: SimpleSpinTest(); break;
+
+		// Activate tests after test_simtime_latency_ passed
+		if(world_->SimTime().Double() > test_simtime_latency_){
+			switch(test_mode_){
+				case simple_ground_ride: SimpleGroundRideTest(); break;
+				case simple_spin: SimpleSpinTest(); break;
+			}		
 		}
+
 	}
 
 	void GazeboRotorModel::SimpleSpinTest(){
 		angularVel_ = link_->RelativeAngularVel();
 		
-		double targetVel = 10; // rad/s
+		double targetVel = 84; // rad/s ... 800rpm
 		double e = targetVel - angularVel_[2];
-		double p = 0.00002;
+		double p = 0.5;
 
-		gzdbg << "angularVel " << angularVel_ << "\n";
+		gzdbg << "angVel " << angularVel_ << " | err: " << e <<"\n";
 		link_->AddRelativeTorque(ignition::math::Vector3d(0,0,p*e));
 	}
 

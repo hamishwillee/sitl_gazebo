@@ -69,6 +69,7 @@ namespace gazebo {
 		};
 
 		TestMode test_mode_;
+		double test_simtime_latency_;
 		void SimpleSpinTest();
 		void SimpleGroundRideTest();
 	};
