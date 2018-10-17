@@ -13,16 +13,18 @@
     <include>
       <uri>model://asphalt_plane</uri>
     </include>
-
    <include>
       <uri>model://autogyro</uri>
     </include>
-    <physics name='default_physics' default='0' type='ode'>
-      <gravity>0 0 -9.8066</gravity>
+  
+
+    <gravity>0 0 -9.8066</gravity>
+
+    <physics name='default_physics' default='true' type='ode'>
       <ode>
         <solver>
           <type>quick</type>
-          <iters>25</iters>
+          <iters>20</iters>
           <sor>1.3</sor>
           <use_dynamic_moi_rescaling>0</use_dynamic_moi_rescaling>
         </solver>
@@ -33,11 +35,31 @@
           <contact_surface_layer>0.001</contact_surface_layer>
         </constraints>
       </ode>
-      <max_step_size>0.0005</max_step_size>
+      <max_step_size>0.0001</max_step_size>
       <real_time_factor>1</real_time_factor>
-      <real_time_update_rate>1000</real_time_update_rate>
+      <real_time_update_rate>10000</real_time_update_rate>
       <magnetic_field>6.0e-6 2.3e-5 -4.2e-5</magnetic_field>
     </physics>
+
+    <physics name="ode_500iters" type="ode">
+      <ode>
+        <solver>
+          <type>quick</type>
+          <iters>500</iters>
+        </solver>
+      </ode>
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1</real_time_factor>
+      <real_time_update_rate>1000</real_time_update_rate>
+    </physics>
+
+    <physics name="dart" type="dart">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1</real_time_factor>
+      <real_time_update_rate>1000</real_time_update_rate>
+    </physics>
+
+
     <scene>
       <ambient>50 50 50</ambient>
       <background>20 20 20</background>

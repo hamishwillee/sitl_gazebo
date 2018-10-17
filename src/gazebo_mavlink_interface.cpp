@@ -108,6 +108,7 @@ void GazeboMavlinkInterface::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf
               gztopic_[index] = "~/" + model_->GetName() + channel->Get<std::string>("gztopic");
             else
               gztopic_[index] = "control_position_gztopic_" + std::to_string(index);
+
       #if GAZEBO_MAJOR_VERSION >= 7 && GAZEBO_MINOR_VERSION >= 4
             /// only gazebo 7.4 and above support Any
             joint_control_pub_[index] = node_handle_->Advertise<gazebo::msgs::Any>(
@@ -978,6 +979,7 @@ void GazeboMavlinkInterface::handle_control(double _dt)
         double err = current - target;
         double force = pids_[i].Update(err, _dt);
         joints_[i]->SetForce(0, force);
+        //gzdbg << "J[" << i << "] F: " << force << " om: " << joints_[i]->GetVelocity(0) << "\n";
       }
       else if (joint_control_type_[i] == "position_gztopic")
       {
@@ -986,6 +988,7 @@ void GazeboMavlinkInterface::handle_control(double _dt)
         gazebo::msgs::Any m;
         m.set_type(gazebo::msgs::Any_ValueType_DOUBLE);
         m.set_double_value(target);
+       // gzdbg << "target " << target << "\n";
      #else
         std::stringstream ss;
         gazebo::msgs::GzString m;
