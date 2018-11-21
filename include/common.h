@@ -24,6 +24,7 @@
 #include <tinyxml.h>
 #include <Eigen/Dense>
 #include <gazebo/gazebo.hh>
+#include <gazebo/physics/physics.hh>
 #include <ignition/math.hh>
 
 namespace gazebo {
@@ -111,6 +112,28 @@ double GetDegrees360(const ignition::math::Angle& angle) {
   return degrees;
 }
 
+/**
+ * \brief Make a copy of link.
+ */
+physics::LinkPtr InsertLinkCopy(
+    const physics::ModelPtr model, 
+    const physics::LinkPtr link, 
+    const std::string& name, 
+    const ignition::math::Pose3d pose = ignition::math::Pose3d(0,0,0,0,0,0)
+  ){
+
+  physics::LinkPtr new_link = model->CreateLink(name);
+  sdf::ElementPtr params(new sdf::Element);
+
+  params->Copy(link->GetSDF()->Clone());
+  params->GetAttribute("name")->Set(name);
+
+  new_link->Load(params);
+  new_link->Init();
+  new_link->SetRelativePose(pose);
+
+  return new_link;
+}
 
 }  // namespace gazebo
 

@@ -27,14 +27,42 @@
 #include <gazebo/msgs/msgs.hh>
 #include <ignition/math.hh>
 
+#include "common.h"
+
 namespace gazebo {
 
-	static const std::string LINK_NAME_SDF_TAG = "link_name";
-	static const std::string JOINT_NAME_SDF_TAG = "joint_name";
-	static const std::string ROLL_CMD_GZTOPIC = "/rotor_roll_cmd";
-	static const std::string PITCH_CMD_GZTOPIC = "/rotor_pitch_cmd";
+		static const std::string SDF_TAG_BLADE_TEMPLATE_LINK = "blade_link";
+		static const std::string SDF_TAG_PARENT_LINK = "parent_link";
+		static const std::string SDF_TAG_SHAFT_TEMPLATE_LINK = "shaft_link";
+
+		static const std::string SDF_TAG_ROTOR_POSE = "pose";
+		static const std::string SDF_TAG_ROTOR_RADIUS = "radius";
+		static const std::string SDF_TAG_ROTOR_PITCH_MAX = "rotor_pitch_max";
+		static const std::string SDF_TAG_ROTOR_PITCH_MIN = "rotor_pitch_min";
+		static const std::string SDF_TAG_ROTOR_ROLL_MAX = "rotor_roll_max";
+		static const std::string SDF_TAG_ROTOR_ROLL_MIN = "rotor_roll_min";
+
+		static const std::string SDF_TAG_BLADE_COUNT = "blade_count";
+		static const std::string SDF_TAG_BLADE_REL_START = "blade_rel_start";
+		static const std::string SDF_TAG_BLADE_REL_COG = "blade_rel_cog_pos";
+		static const std::string SDF_TAG_BLADE_FLAP_ANGLE_MAX = "blade_flap_angle_max";
+		static const std::string SDF_TAG_BLADE_FLAP_ANGLE_MIN = "blade_flap_angle_min";
+
+		static const std::string SDF_TAG_PROFILE_PITCH = "profile_pitch";
+		static const std::string SDF_TAG_PROFILE_CHORD = "profile_chord";
+
+		static const std::string SDF_TAG_TEST_CASE_DELAY = "test_delay";
+		static const std::string SDF_TAG_TEST_CASE = "test_case";
+
+		static const std::string ROTOR_SPEED_GZTOPIC = "/rotor_speed";
+		static const std::string BLADE_FLAPPING_GZTOPIC = "/blade_flapping";
+		static const std::string ROLL_CMD_GZTOPIC = "/rotor_roll_cmd";
+		static const std::string PITCH_CMD_GZTOPIC = "/rotor_pitch_cmd";
+
 
 	class GazeboRotorModel : public ModelPlugin {
+
+
 	public:
 
 		GazeboRotorModel();
@@ -45,8 +73,18 @@ namespace gazebo {
 		virtual void Load(physics::ModelPtr _model, sdf::ElementPtr _sdf);
 		virtual void OnUpdate();
 
+		void ReadSDFParams(sdf::ElementPtr _sdf);
+		void SetupLinks();
+		void InitSimulation();
+		void InitEventHandlers();
+		void RunSimulation();
+
+
 		void OnRollCmdMsg(ConstAnyPtr &_msg);
 		void OnPitchCmdMsg(ConstAnyPtr &_msg);
+		void OnLiftCmdMsg(ConstAnyPtr &_msg);
+
+		void MockParams();
 
 		// Testing other channels
 		/*
@@ -59,53 +97,125 @@ namespace gazebo {
 
 		physics::WorldPtr world_;
 		physics::ModelPtr model_;
-		physics::LinkPtr link_;
-		physics::JointPtr joint_;
+		physics::PhysicsEnginePtr physics_;
+
+
+		physics::LinkPtr blade_template_link_;
+		physics::LinkPtr shaft_template_link_;
+		physics::LinkPtr parent_link_;
+		physics::LinkPtr shaft_link_;
+		physics::JointPtr rotor_joint_;
+
+		ignition::math::Pose3d rotor_pose_;
 
 		event::ConnectionPtr updateConnection_;
 
 		transport::NodePtr node_handle_;
-  		transport::PublisherPtr rotor_pub_;
+  		transport::PublisherPtr rotor_speed_pub_;
+  		transport::PublisherPtr blade_flapping_pub_;
   		transport::PublisherPtr visual_pub_;
   		transport::SubscriberPtr control_roll_sub_;
   		transport::SubscriberPtr control_pitch_sub_;
+  		transport::SubscriberPtr control_lift_sub_;
 
-////  Testing other channels
-/*
+		// Testing other channels
+		/*
 		transport::SubscriberPtr control_5_sub_;
 		transport::SubscriberPtr control_6_sub_;
 		transport::SubscriberPtr control_7_sub_;
-*/
+		*/
 
 		std::string link_name_;
 		std::string joint_name_;
+		uint32_t link_visual_id_;
+		uint32_t link_visual_cyl_id_;
 
-		// Construction/aerodynamic params
-		double rotor_radius_;
-		double number_of_blades_;
-		bool ccw_;
+		// Fields 
+		struct BladeElement {
+			
+			double r;		// offset from 
+			double dr;
+			double alfa; 	// relative wind
+			double theta;   // pitch
+			double ut;
+			double up;
+			double phi;
+			double Cl;
+			double Cd;
+			double dL;
 
-		// State
-		double rotor_rpm_;
-		double cmd_pitch_;
-		double cmd_roll_;
-
-		ignition::math::Pose3d pose_;
-		ignition::math::Vector3d angularVel_;
-
-		// Testing, choose testmode in constuctor
-		enum TestMode {
-			none, 
-			simple_ground_ride, 
-			simple_spin,
-			simple_spin_lift
+			ignition::math::Vector3d abs_pos;
+			ignition::math::Vector3d abs_vel;
+			ignition::math::Vector3d abs_wind;
+			ignition::math::Vector3d local_wind;
 		};
 
-		TestMode test_mode_;
-		double test_simtime_latency_;
+
+		struct Blade {
+			physics::LinkPtr link;
+			physics::JointPtr flap_joint;
+
+			double flapping_angle;
+			std::vector<BladeElement> elements;
+		};
+		std::vector<Blade> blades_;
+
+	
+		// Construction/aerodynamic params, default values
+		double rotor_radius_ = 1.0;
+		double rotor_pitch_max_ = 0;
+		double rotor_pitch_min_ = 0;
+		double rotor_roll_max_ = 0;
+		double rotor_roll_min_ = 0;
+		int n_blades_ = 2;
+		int n_elements_ = 8;
+		bool ccw_ = true;
+		double air_rho_ = 1.225;
+		double profile_chord_ = 0.05;
+		double profile_pitch_ = 1.5*3.1416/180;
+		double blade_cog_rel_pos_ = 0.66;
+		double blade_mass_ = 0.5;
+		double blade_rel_start_ = 0;
+		double blade_flap_angle_min_ = 0;
+		double blade_flap_angle_max_ = 0;
+
+		// Computed parameters (in InitSimulation())
+		double blade_cog_pos_;
+		double rotor_joint_tmp_pitch_;
+
+		ignition::math::Vector3d world_wind_ = ignition::math::Vector3d(0,0,0);
+
+
+		// State
+		double rotor_omega_;
+		double rotor_ksi_; // angular position
+		double blade_flapping_;
+		double cmd_pitch_;
+		double cmd_roll_;
+		double cmd_lift_;// for testing
+	
+
+		// Testing
+		std::string test_case_ = "";
+		double test_delay_;
+		double test_counter_ = 0;
+
 		void SimpleSpinTest();
 		void SimpleGroundRideTest();
 		void SimpleSpinLiftTest();
+		void SimpleLiftTest();
+		void AeroLiftTest();
+		void AutorotCarTest();
+		void AutorotVerticalWindTest();
+
+		typedef void (GazeboRotorModel::*TestFunction)(void);
+		std::map<std::string, TestFunction> testMethods {
+			{"simple_spin", 				&GazeboRotorModel::SimpleSpinTest},
+			{"simple_ground_ride",			&GazeboRotorModel::SimpleGroundRideTest},
+			{"lift", 						&GazeboRotorModel::AeroLiftTest},
+			{"rotor_speed_car", 			&GazeboRotorModel::AutorotCarTest},
+			{"rotor_speed_vertical_wind", 	&GazeboRotorModel::AutorotVerticalWindTest}
+		};
 	};
 }
 
