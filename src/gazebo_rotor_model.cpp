@@ -96,6 +96,13 @@ namespace gazebo {
 			gzerr << "sdf tag " << SDF_TAG_SHAFT_TEMPLATE_LINK << "not found. \n";
 		}
 
+		if(_sdf->HasElement(SDF_TAG_FLAP_JOINT_TEMPLATE)){
+			flap_joint_template_ = model_->GetJoint(_sdf->GetElement(SDF_TAG_FLAP_JOINT_TEMPLATE)->Get<std::string>());
+		}
+		else {
+			gzerr << "sdf tag " << SDF_TAG_FLAP_JOINT_TEMPLATE << "not found. \n";
+		}
+		
 		if(_sdf->HasElement(SDF_TAG_ROTOR_POSE)){
 			rotor_pose_ = _sdf->GetElement(SDF_TAG_ROTOR_POSE)->Get<ignition::math::Pose3d>();
 		}
@@ -137,17 +144,11 @@ namespace gazebo {
 	void GazeboRotorModel::SetupLinks(){
 		gzdbg << "Setup links " << "\n";
 
-		//Create Shaft
-		physics::LinkPtr shaft_link_template = model_->GetChildLink("shaft_template");
-		shaft_link_ = InsertLinkCopy(model_, shaft_link_template, "shaft", rotor_pose_);
-
-		// Create Shaft joint
-		ignition::math::Pose3d rotorJointOrigin;
-		rotor_joint_ = physics_->CreateJoint("revolute");
-		rotor_joint_->SetName(model_->GetName() + "_rotor_joint_"); // mozna nebude fungovat pro vic rotoru na jednom modelu
-		rotor_joint_->Load(parent_link_, shaft_link_, rotorJointOrigin);
-		rotor_joint_->Init();
+		// Construct the shaft link & joint
+		shaft_link_ = InsertLinkCopy(model_, shaft_template_link_, "shaft", rotor_pose_);
+		rotor_joint_ = model_->CreateJoint("rotor_joint_0", "revolute", parent_link_, shaft_link_);
 		rotor_joint_->SetAxis(0, rotor_pose_.Rot().ZAxis());
+		rotor_joint_->Init();
 
 		// Create blades
 		blades_.resize(n_blades_);
@@ -160,15 +161,24 @@ namespace gazebo {
 
 			physics::LinkPtr blade_link = InsertLinkCopy(
 				model_, blade_template_link_, "phantom_blade_"+std::to_string(i), pose);
+	
+		 	//physics::JointPtr blade_joint_template = model_->GetJoint("flap_joint_template");
+			physics::JointPtr blade_joint =  model_->CreateJoint("flap_joint_"+std::to_string(i), "revolute", shaft_link_, blade_link);
 
-			physics::JointPtr blade_joint = physics_->CreateJoint("revolute");
-			blade_joint->SetName(model_->GetName() + "_flapping_joint_" + std::to_string(i)); // mozna nebude fungovat pro vic rotoru na jednom modelu
-			blade_joint->Load(shaft_link_, blade_link, rotorJointOrigin);
-			blade_joint->SetAxis(0, pose.Rot().YAxis());
-			blade_joint->SetLowerLimit(0, -0.1);	// fixed flapping here
-			blade_joint->SetUpperLimit(0, -0.1);
-			blade_joint->SetParam("friction", 0, 0.1);
-			blade_joint->SetDamping(0,0.5);
+		 	// Copy SDF params from template joint (without copying the joint doesn't show in inspector)
+			sdf::ElementPtr params(new sdf::Element);
+  	 		params->Copy(flap_joint_template_->GetSDF()->Clone());
+			params->GetAttribute("name")->Set("flap_joint_"+std::to_string(i));
+  	 		params->GetElement("parent")->Set(shaft_link_->GetName());
+  	 		params->GetElement("child")->Set(blade_link->GetName());
+			
+			// Load SDF Params and override
+			blade_joint->Load(params);
+			blade_joint->SetAxis(0, -pose.Rot().YAxis());
+			blade_joint->SetLowerLimit(0, blade_flap_angle_min_);
+			blade_joint->SetUpperLimit(0, blade_flap_angle_max_);
+			// blade_joint->SetParam("friction", 0, 0.1);
+			// blade_joint->SetStiffnessDamping(0, 100.0, 0.5, 0.05);
 			blade_joint->Init();
 
 			blades_[i].link = blade_link;
@@ -179,9 +189,9 @@ namespace gazebo {
 		blade_template_link_->SetWorldPose(ignition::math::Pose3d(0,0,0,0,0,0));
 		blade_template_link_->SetLinkStatic(true);
 		blade_template_link_->SetKinematic(true);
-		shaft_link_template->SetWorldPose(ignition::math::Pose3d(0,0,0,0,0,0));
-		shaft_link_template->SetLinkStatic(true);
-		shaft_link_template->SetKinematic(true);
+		shaft_template_link_->SetWorldPose(ignition::math::Pose3d(0,0,0,0,0,0));
+		shaft_template_link_->SetLinkStatic(true);
+		shaft_template_link_->SetKinematic(true);
 	}
 
 	void GazeboRotorModel::InitSimulation(){
@@ -192,8 +202,11 @@ namespace gazebo {
 		// Shouldn't be taken from the sdf -> those are fake gazebo values
 		//blade_mass_ = blades_[0].link->GetInertial()->Mass();
 		//blade_cog_position_ = blades_[0].link->GetInertial()->CoG()[0]; // 
-
-		gzdbg << "Got inertial " << blade_mass_ << " " << blade_cog_pos_ << "\n";
+		
+		rotor_roll_scale_ = rotor_roll_max_;
+		rotor_roll_neg_scale_ = abs(rotor_roll_min_);
+		rotor_pitch_scale_ = rotor_pitch_max_;
+		rotor_pitch_neg_scale_ = rotor_pitch_min_;
 
 		// Prepare discretization
 		for(int i = 0; i<n_blades_; i++){
@@ -260,12 +273,31 @@ namespace gazebo {
 
 	void GazeboRotorModel::OnRollCmdMsg(ConstAnyPtr &_msg){
 		//gzdbg << "Ctrl: R "  << _msg->double_value() << "\n";
-		cmd_roll_ = _msg->double_value();
+		double value = _msg->double_value();
+
+		if (value > 0){
+			cmd_roll_ = value*rotor_roll_max_;
+		}
+		else {
+			cmd_roll_ = value*(-rotor_roll_min_);
+		}
+		
+		physics::JointPtr roll_joint = model_->GetJoint("roll_dummyjoint");
+		roll_joint->SetPosition(0,cmd_roll_);
 	}
 
 	void GazeboRotorModel::OnPitchCmdMsg(ConstAnyPtr &_msg){
 		//gzdbg << "Ctrl: 		P"  << _msg->double_value() << "\n";
-		cmd_pitch_ = _msg->double_value();
+		double value = -_msg->double_value(); // inverting ???
+		if (value > 0){
+			cmd_pitch_ = value*rotor_pitch_max_;
+		}
+		else {
+			cmd_pitch_ = value*(-rotor_pitch_min_);
+		}
+
+		physics::JointPtr pitch_joint = model_->GetJoint("pitch_dummyjoint");
+		pitch_joint->SetPosition(0,-cmd_pitch_); // inverting axis
 	}
 
 //  Testing other channels
@@ -292,7 +324,6 @@ namespace gazebo {
 
 		ignition::math::Vector3d fuselage_roll_axis = parent_link_->WorldPose().Rot().XAxis();
 		ignition::math::Vector3d fuselage_pitch_axis = parent_link_->WorldPose().Rot().YAxis();
-    	// gzdbg << "roll ax " << fuselage_roll_axis << "\n";			
 
 		for(int i = 0; i<n_blades_; i++){
 
@@ -302,7 +333,7 @@ namespace gazebo {
 				fuselage_roll_axis, cmd_roll_);
 
 			ignition::math::Quaternion<double> pitch_rot = ignition::math::Quaternion<double>(
-				fuselage_pitch_axis, cmd_pitch_);
+				fuselage_pitch_axis, -cmd_pitch_);
 
 		 	ignition::math::Pose3d blade_cmd_pose = ignition::math::Pose3d(blade_pose.Pos(),
 		 			blade_pose.CoordRotationAdd(roll_rot));
@@ -327,38 +358,40 @@ namespace gazebo {
 			for(int j = 0; j<n_elements_; j++){
 				BladeElement* e = &(blades_[i].elements[j]);
 
+				// Calculate local wind at current blade element
 				e->abs_pos = rotor_origin.Pos() + e->r*blade_centrifugal_direction;
-				e->abs_vel = rotor_origin_vel + e->r*rotor_omega_*blade_radial_direction; 						// later add wind
-				e->local_wind = world_wind_ - e->abs_vel;
-
-
-				double ut = e->local_wind.Dot(-blade_radial_direction); 	// ut speed goes agaist the radial direction
-				double up = e->local_wind.Dot(-blade_normal_direction);   	// up speed points down as in Leishman
-
+				e->abs_vel = rotor_origin_vel + e->r*rotor_omega_*blade_radial_direction; 	// currently ignores flapping velocity!
+				e->local_wind = world_wind_ - e->abs_vel;									
 				// gzdbg << "local wind" << e->local_wind << " \n";
 
+				// Calculate Angle of attack alfa
+				double ut = e->local_wind.Dot(-blade_radial_direction); 	// ut speed goes agaist the radial direction
+				double up = e->local_wind.Dot(-blade_normal_direction);   	// up speed points down as in Leishman
 				double u = sqrt(up*up + ut*ut);   // local wind magnitude, can be simplified to ut
 				double phi = up/ut;
 				double alfa = profile_pitch_ - phi;	// tan-1 (up/ut) = up/ut for small angles
 
-
 				//Re, Ma
 				//todo dodelat zavislost Cl, Cd
 
-
+				// Calculate lift and drag coefficients
 				double alfa_deg = alfa*180/3.1416;
 				double Cl = 0.1*alfa_deg; 
 				double Cd = 0.02+(0.01*alfa_deg)*(0.01*alfa_deg);
 
-				// Lepe vyresit limity
+				// Adjust aerodynamic coefficients if stalls, todo - improve
 				Cl = ignition::math::clamp(Cl,-12.0,12.0);
 				Cd = ignition::math::clamp(Cd, 0.0, 0.06);
 
+				// Calculate lift and drag forces 
 				double dL = 0.5*air_rho_*u*u*profile_chord_*Cl*e->dr;
 				double dD = 0.5*air_rho_*u*u*profile_chord_*Cd*e->dr;
 
+				// Project forces to blade coordinates
 				Fz += dL*cos(phi) + dD*sin(phi);
 				Fx += dL*sin(phi) + dD*cos(phi);
+
+				// Integrate L over elements
 				L += dL;
 
 				e->up = up;
@@ -368,25 +401,35 @@ namespace gazebo {
 				e->Cl = Cl;
 				e->Cd = Cd;
 				e->dL = dL;
-
 			}
 
-			ignition::math::Vector3d F_world_frame = blade_pose.Rot().Inverse()*ignition::math::Vector3d(0,-Fx,Fz);
+
+			ignition::math::Vector3d F_world_frame = blade_pose.Rot()*ignition::math::Vector3d(0,-Fx,Fz);;
+			//ignition::math::Vector3d F_world_frame = blade_pose.Rot()*ignition::math::Vector3d(0,0,25);
+
 			ignition::math::Vector3d F_rotated = pitch_rot*roll_rot*F_world_frame;
-			ignition::math::Vector3d F_local =  blade_pose.Rot()*F_rotated;
+			ignition::math::Vector3d F_local =  blade_pose.Rot().Inverse()*F_rotated;
 
 			blades_[i].link->AddLinkForce(F_local, ignition::math::Vector3d(blade_cog_pos_,0,0 ));
-				
-			/*
-			gzdbg 
-				<<	" ksi " << rotor_ksi_ 
-				<<	" Pitch " << cmd_pitch_ 
-				<<  " F_loc " << F_local 
-				<< " Fz: " << Fz 
-				<< " Fx " << -Fx 
-				<< " Fw " << F_world_frame 
-			<< "\n";
-			*/
+
+			// gzdbg
+			// 	<< "FW " << F_world_frame
+			// 	//<< " r_A" << fuselage_roll_axis
+			// 	//<< " ROLL_rot" << roll_rot
+			// 	<< " F_local " << F_local 
+			// << "\n";
+
+			// gzdbg << "F: " << F_b << "\n";
+			
+			// gzdbg 
+			// 	<<	" ksi " << rotor_ksi_ 
+			// 	<<	" Pitch " << cmd_pitch_ 
+			// 	<<  " F_loc " << F_local 
+			// 	<< " Fz: " << Fz 
+			// 	<< " Fx " << -Fx 
+			// 	<< " Fw " << F_world_frame 
+			// << "\n";
+			
 
 			// Flapping angle
 			double Mcf = (blade_mass_*rotor_omega_*rotor_omega_*rotor_radius_*rotor_radius_)/3;
@@ -403,7 +446,6 @@ namespace gazebo {
 		// 	<< blades_[0].elements[3].Cd << " "
 		// 	<< blades_[0].elements[4].Cd << " "
 		// << "\n";
-		
 	}
 
 
@@ -411,8 +453,7 @@ namespace gazebo {
 
 	void GazeboRotorModel::SimpleSpinTest(){
 		
-		//double targetVel = 84; // rad/s ... 800rpm
-		double targetVel = 84;
+		double targetVel = 84; // rad/s ... 800rpm
 		double e = targetVel - rotor_omega_;
 		double p = 0.5;
 
@@ -444,7 +485,8 @@ namespace gazebo {
 
 		// Set initial shaft velocity
 		// if(test_counter_ < 1){
-		// 	rotor_joint_->SetVelocity(0,10.0);	
+		// 	rotor_joint_->SetVelocity(0,10.0);	e.Rot().Inverse()*ignition::math::Vector3d(0,-Fx,Fz);
+			//ignition::math::Vector3d F_world_frame = blade_pos
 		// 	test_counter_++;
 		// }
 
@@ -454,7 +496,6 @@ namespace gazebo {
 
 
 		if(world_->SimTime().Double() > test_delay_){
-
 			// Setup wind
 			double wind_speed = 20;
 			ignition::math::Vector3d world_wind_direction = ignition::math::Vector3d(0,0,1).Normalize();
@@ -544,6 +585,50 @@ namespace gazebo {
 			gzdbg << "Simulation activated!" << " Wind " << world_wind_ << "\n";
 			test_counter_++;
 		}
+
+		RunSimulation();
+	}
+
+	void GazeboRotorModel::RotorControlTest(){
+
+
+		
+		if(test_counter_ < 1){
+			/* Run once at the start code start */	
+			rotor_joint_->SetVelocity(0,0.5);	
+
+
+			double wind_speed = 0;
+			ignition::math::Vector3d world_wind_direction = ignition::math::Vector3d(-0.5,0,1).Normalize();
+			world_wind_ = wind_speed * world_wind_direction;
+			gzdbg << "World wind " << world_wind_ << "\n";
+
+			/* Run once at the start code end */
+			test_counter_++;
+		}
+
+		if(world_->SimTime().Double() < test_delay_){
+			return;
+		}
+
+		if(test_counter_ < 2){
+			/* Runonce after delay code */
+
+
+			/* Run once after delay end */
+
+			gzdbg << "Simulation activated!" << " Wind " << world_wind_ << "\n";
+			test_counter_++;
+		}
+
+		rotor_joint_->SetVelocity(0,60.0);	
+		
+		// Prism joint force measure example
+		// physics::JointPtr prismJoint = model_->GetJoint("prism");
+		// physics::LinkPtr prism_shaft = model_->GetChildLink("prism_shaft");
+		// physics::JointWrench forces = prismJoint->GetForceTorque(0);
+		// ignition::math::Vector3d pf =  forces.body2Force;
+		// // gzdbg << "body2Force " << pf << "\n";
 
 		RunSimulation();
 	}
