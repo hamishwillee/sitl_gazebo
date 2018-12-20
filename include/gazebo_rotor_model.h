@@ -34,7 +34,6 @@ namespace gazebo {
 		static const std::string SDF_TAG_BLADE_TEMPLATE_LINK = "blade_link";
 		static const std::string SDF_TAG_PARENT_LINK = "parent_link";
 		static const std::string SDF_TAG_SHAFT_TEMPLATE_LINK = "shaft_link";
-		static const std::string SDF_TAG_FLAP_JOINT_TEMPLATE = "flap_joint";
 
 		static const std::string SDF_TAG_ROTOR_POSE = "pose";
 		static const std::string SDF_TAG_ROTOR_RADIUS = "radius";
@@ -106,8 +105,6 @@ namespace gazebo {
 		physics::LinkPtr parent_link_;
 		physics::LinkPtr shaft_link_;
 		physics::JointPtr rotor_joint_;
-		physics::JointPtr flap_joint_template_;
-
 
 		ignition::math::Pose3d rotor_pose_;
 
@@ -210,7 +207,6 @@ namespace gazebo {
 		void AeroLiftTest();
 		void AutorotCarTest();
 		void AutorotVerticalWindTest();
-		void RotorControlTest();
 
 		typedef void (GazeboRotorModel::*TestFunction)(void);
 		std::map<std::string, TestFunction> testMethods {
@@ -218,8 +214,7 @@ namespace gazebo {
 			{"simple_ground_ride",			&GazeboRotorModel::SimpleGroundRideTest},
 			{"lift", 						&GazeboRotorModel::AeroLiftTest},
 			{"rotor_speed_car", 			&GazeboRotorModel::AutorotCarTest},
-			{"rotor_speed_vertical_wind", 	&GazeboRotorModel::AutorotVerticalWindTest},
-			{"rotor_control_test",			&GazeboRotorModel::RotorControlTest}
+			{"rotor_speed_vertical_wind", 	&GazeboRotorModel::AutorotVerticalWindTest}
 		};
 	};
 }
