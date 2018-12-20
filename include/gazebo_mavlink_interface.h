@@ -21,7 +21,6 @@
 #include <vector>
 #include <thread>
 #include <mutex>
-#include <condition_variable>
 #include <deque>
 #include <atomic>
 #include <chrono>
@@ -71,7 +70,6 @@
 #include <geo_mag_declination.h>
 
 static const uint32_t kDefaultMavlinkUdpPort = 14560;
-static const uint32_t kDefaultMavlinkTcpPort = 4560;
 static const uint32_t kDefaultQGCUdpPort = 14550;
 
 using lock_guard = std::lock_guard<std::recursive_mutex>;
@@ -120,7 +118,7 @@ enum class Framing : uint8_t {
 class GazeboMavlinkInterface : public ModelPlugin {
 public:
   GazeboMavlinkInterface() : ModelPlugin(),
-    received_first_actuator_(false),
+    received_first_referenc_(false),
     namespace_(kDefaultNamespace),
     protocol_version_(2.0),
     motor_velocity_reference_pub_topic_(kDefaultMotorVelocityReferencePubTopic),
@@ -129,8 +127,7 @@ public:
     use_left_elevon_pid_(false),
     use_right_elevon_pid_(false),
     vehicle_is_tailsitter_(false),
-    send_vision_estimation_(false),
-    send_odometry_(false),
+    send_odometry_(true),
     imu_sub_topic_(kDefaultImuTopic),
     opticalFlow_sub_topic_(kDefaultOpticalFlowTopic),
     lidar_sub_topic_(kDefaultLidarTopic),
@@ -156,9 +153,6 @@ public:
     groundtruth_lon_rad(0.0),
     groundtruth_altitude(0.0),
     mavlink_udp_port_(kDefaultMavlinkUdpPort),
-    mavlink_tcp_port_(kDefaultMavlinkTcpPort),
-    tcp_client_fd_(0),
-    use_tcp_(false),
     qgc_udp_port_(kDefaultQGCUdpPort),
     serial_enabled_(false),
     tx_q {},
@@ -184,7 +178,7 @@ protected:
   void OnUpdate(const common::UpdateInfo&  /*_info*/);
 
 private:
-  bool received_first_actuator_;
+  bool received_first_referenc_;
   Eigen::VectorXd input_reference_;
 
   float protocol_version_;
@@ -218,7 +212,6 @@ private:
 
   bool vehicle_is_tailsitter_;
 
-  bool send_vision_estimation_;
   bool send_odometry_;
 
   std::vector<physics::JointPtr> joints_;
@@ -238,12 +231,8 @@ private:
   void IRLockCallback(IRLockPtr& irlock_msg);
   void VisionCallback(OdomPtr& odom_msg);
   void send_mavlink_message(const mavlink_message_t *message, const int destination_port = 0);
-  void handle_message(mavlink_message_t *msg, bool &received_actuator);
-  void pollForMAVLinkMessages();
-  void SendSensorMessages();
-  void handle_control(double _dt);
-  bool IsRunning();
-
+  void handle_message(mavlink_message_t *msg);
+  void pollForMAVLinkMessages(double _dt, uint32_t _timeoutMs);
 
   // Serial interface
   void open();
@@ -257,6 +246,8 @@ private:
 
   static const unsigned n_out_max = 16;
   double alt_home = 488.0;   // meters
+
+  unsigned _rotor_count;
 
   double input_offset_[n_out_max];
   double input_scaling_[n_out_max];
@@ -285,9 +276,6 @@ private:
   std::string groundtruth_sub_topic_;
   std::string vision_sub_topic_;
 
-  std::mutex last_imu_message_mutex_ {};
-  std::condition_variable last_imu_message_cond_ {};
-  sensor_msgs::msgs::Imu last_imu_message_;
   common::Time last_time_;
   common::Time last_imu_time_;
   common::Time last_actuator_time_;
@@ -296,7 +284,9 @@ private:
   double groundtruth_lon_rad;
   double groundtruth_altitude;
 
-  double imu_update_interval_ = 0.004; ///< Used for non-lockstep
+  double imu_update_interval_ = 0.004;
+
+  void handle_control(double _dt);
 
   ignition::math::Vector3d gravity_W_;
   ignition::math::Vector3d velocity_prev_W_;
@@ -307,27 +297,23 @@ private:
 
   int _fd;
   struct sockaddr_in _myaddr;     ///< The locally bound address
-  socklen_t _myaddr_len;
   struct sockaddr_in _srcaddr;    ///< SITL instance
-  socklen_t _srcaddr_len;
+  socklen_t _addrlen;
   unsigned char _buf[65535];
-  struct pollfd fds_[1];
+  struct pollfd fds[1];
 
+  struct sockaddr_in _srcaddr_2;  ///< MAVROS
+
+  //so we dont have to do extra callbacks
+  ignition::math::Vector3d optflow_gyro {};
   double optflow_distance;
   double sonar_distance;
 
   in_addr_t mavlink_addr_;
   int mavlink_udp_port_;
-  int mavlink_tcp_port_;
-  int tcp_client_fd_;
-  bool use_tcp_;
 
   in_addr_t qgc_addr_;
   int qgc_udp_port_;
-
-  bool enable_lockstep_ = false;
-  double speed_factor_ = 1.0;
-  int64_t previous_imu_seq_ = 0;
 
   // Serial interface
   mavlink_status_t m_status;
@@ -349,5 +335,6 @@ private:
   // state variables for baro pressure sensor random noise generator
   double baro_rnd_y2_;
   bool baro_rnd_use_last_;
+
   };
 }

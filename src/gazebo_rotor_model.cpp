@@ -203,6 +203,11 @@ namespace gazebo {
 		//blade_mass_ = blades_[0].link->GetInertial()->Mass();
 		//blade_cog_position_ = blades_[0].link->GetInertial()->CoG()[0]; // 
 		
+		rotor_roll_scale_ = rotor_roll_max_;
+		rotor_roll_neg_scale_ = abs(rotor_roll_min_);
+		rotor_pitch_scale_ = rotor_pitch_max_;
+		rotor_pitch_neg_scale_ = rotor_pitch_min_;
+
 		// Prepare discretization
 		for(int i = 0; i<n_blades_; i++){
 			blades_[i].elements.resize(n_elements_);

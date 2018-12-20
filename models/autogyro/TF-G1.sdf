@@ -4,7 +4,7 @@
     <link name='base_link'>
       <pose>0 0 0 0 0 0</pose>
       <inertial>
-        <pose>-0.2 0 0 0 0 0</pose>
+        <pose>-0.1 0 0 0 0 0</pose>
         <mass>4.9</mass>
         <inertia>
           <ixx>0.197563</ixx>
@@ -19,12 +19,12 @@
         <!-- Use with wheels -->
         <pose>-0.6 0 -0.12 0 0 0</pose>
         <geometry>
-          <sphere><radius>0.05</radius></sphere>
+          <sphere><radius>0.02</radius></sphere>
         </geometry>
         <surface>
           <friction>
             <ode>
-              <mu>0.1</mu>
+              <mu>0.05</mu>
               <mu2>0.01</mu2>
             </ode>
           </friction>
@@ -65,14 +65,12 @@
           </script>
         </material>
       </visual>
-      <gravity>1</gravity>
-      <velocity_decay/>
       <self_collide>0</self_collide>
       <visual name='rear_wheel_visual'>
-        <pose>-0.6 0 -0.06 0 0 0</pose>
+        <pose>-0.6 0 -0.12 0 0 0</pose>
         <geometry>
           <sphere>
-            <radius>0.05</radius>
+            <radius>0.02</radius>
           </sphere>
         </geometry>
       </visual>
@@ -111,13 +109,11 @@
       </axis>
     </joint>
 
-
-
     <link name="left_front_wheel">
       <pose> 0.16 0.22 -0.095 1.5707 1.5707</pose>
        <inertial>
         <pose>0 0 0 0 0 0</pose>
-        <mass>0.02</mass>
+        <mass>0.01</mass>
         <inertia>
           <ixx>0.01</ixx>
           <ixy>0</ixy>
@@ -137,7 +133,7 @@
         <surface>
           <friction>
             <ode>
-              <mu>0.01</mu>
+              <mu>0.1</mu>
               <mu2>0.01</mu2>
               <slip1>0</slip1>
               <slip2>0</slip2>
@@ -181,12 +177,11 @@
         <surface>
           <friction>
             <ode>
-               <mu>0.01</mu>
+               <mu>0.1</mu>
               <mu2>0.01</mu2>
             </ode>
           </friction>
         </surface>
-
       </collision>
       <visual name="right_front_wheel_visual">
         <geometry>
@@ -198,7 +193,7 @@
       </visual>
       <inertial>
         <pose>0 0 0 0 0 0</pose>
-        <mass>0.02</mass>
+        <mass>0.01</mass>
         <inertia>
           <ixx>0.01</ixx>
           <ixy>0</ixy>
@@ -296,64 +291,6 @@
       <velocity_decay/>
       <self_collide>0</self_collide>
     </link>
-
-<!--
-    <link name="rotor_pitch_connector">
-      <pose>0 0 0.42 0 0 0</pose>
-        <inertial>
-        <mass>0.02</mass>
-        <inertia>
-          <ixx>0.001</ixx>
-          <ixy>0</ixy>
-          <ixz>0</ixz>
-          <iyy>0.001</iyy>
-          <iyz>0</iyz>
-          <izz>0.001</izz>
-        </inertia>
-      </inertial>
-      <visual name="rotor_pitch_connector_visual">
-        <geometry>
-          <box>
-           <size>0.005 0.005 0.005</size>
-          </box>
-        </geometry>
-         <material>
-          <script>
-            <name>Gazebo/Purple</name>
-            <uri>__default__</uri>
-          </script>
-        </material>
-      </visual>
-    </link>
-    <link name="rotor_roll_connector">
-      <pose>0 0 0.40 0 0 0</pose>
-      <inertial>
-        <mass>0.02</mass>
-        <inertia>
-          <ixx>0.001</ixx>
-          <ixy>0</ixy>
-          <ixz>0</ixz>
-          <iyy>0.001</iyy>
-          <iyz>0</iyz>
-          <izz>0.001</izz>
-        </inertia>
-      </inertial>
-      <visual name="rotor_roll_connector_visual">
-        <geometry>
-          <box>
-            <size>0.005 0.005 0.005</size>
-          </box>
-        </geometry>
-         <material>
-          <script>
-            <name>Gazebo/Red</name>
-            <uri>__default__</uri>
-          </script>
-        </material>
-      </visual>
-    </link>
--->
-
 
     <link name="left_rudder">
       <pose>-0.744 0.15 0.07 0 0 0 </pose>
@@ -466,7 +403,7 @@
 <!-- Mavlink interface doesn't work without these dummy elements -->
     <joint name='pitch_dummyjoint' type='revolute'>
       <child>pitch-dummylink</child>
-      <parent>base_link</parent>
+      <parent>roll-dummylink</parent>
       <pose>0 0 0 0 0 0</pose>
       <axis>
         <xyz>0 1 0</xyz>
@@ -475,16 +412,28 @@
     </joint>
     
     <link name='pitch-dummylink'>
-      <pose>0 0 0.48 0 0 0</pose>
+      <pose>0 0 0.47 0 0 0</pose>
       <visual name="rotor_cyl_visual">
-        <pose>0 0 -0.05 0 0 0</pose>
+        <pose>0 0 0 0 0 0</pose>
         <geometry>
           <cylinder>
-            <radius>.05</radius>
+            <radius>0.1</radius>
             <length>.005</length>
           </cylinder>
         </geometry>
       </visual>
+      <inertial>
+        <mass>0.001</mass>
+        <inertia>
+          <ixx>0.001</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.001</iyy>
+          <iyz>0</iyz>
+          <izz>0.001</izz>
+        </inertia>
+      </inertial>
+
     </link> 
 
     <joint name='roll_dummyjoint' type='revolute'>
@@ -498,16 +447,18 @@
     </joint>
     
     <link name='roll-dummylink'>
-      <pose>0 0 0.48 0 0 0</pose>
-      <visual name="rotor_cyl_visual">
-        <pose>0 0 -0.05 0 0 0</pose>
-        <geometry>
-          <cylinder>
-            <radius>.05</radius>
-            <length>.005</length>
-          </cylinder>
-        </geometry>
-      </visual>
+      <pose>0 0 0.47 0 0 0</pose>
+      <inertial>
+        <mass>0.001</mass>
+        <inertia>
+          <ixx>0.001</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.001</iyy>
+          <iyz>0</iyz>
+          <izz>0.001</izz>
+        </inertia>
+      </inertial>
     </link> 
 
 
@@ -642,7 +593,6 @@
         <gpsNoise>true</gpsNoise>
     </plugin>
 
-
     <link name='shaft_template'>
       <pose>0 0 0 0 0 0</pose>
       <visual name='visual'>
@@ -655,6 +605,7 @@
         </geometry>
       </visual>
     </link>
+
     <link name='blade_link_template'>
        <pose>0 0 0 0 0 0</pose>
        <visual name='visual'>
@@ -685,31 +636,46 @@
       </inertial>
     </link>
 
+    <joint name="flap_joint_template" type="revolute">
+      <pose>0 0 0 0 0 0 </pose>
+      <child>blade_link_template</child>
+      <parent>world</parent> <!-- this needs to be set up somehow otherwise joint doesn't work -->
+      <axis>
+        <!-- some parameters are overriden in rotor_plugin! -->
+        <use_parent_model_frame>1</use_parent_model_frame>
+        <dynamics>
+          <friction>0.01</friction>
+          <damping>0.5</damping>
+          <spring_stiffness>100</spring_stiffness>
+          <spring_reference>0.05</spring_reference>
+        </dynamics>
+      </axis>
+    </joint>
+
     <plugin name="rotor_model" filename="libgazebo_rotor_model.so">
-      <pose>0 0 0.5 0 0 0</pose>
-      <radius>0.970</radius>
-      <blade_rel_cog_pos>0.75</blade_rel_cog_pos>
+        <pose> 0 0 0.42 0 0 0</pose>
+        <radius>0.970</radius>
 
-      <parent_link>base_link</parent_link>
-      <shaft_link>shaft_template</shaft_link>
-      <blade_link>blade_link_template</blade_link>
-      <blade_count>2</blade_count>
-      <blade_rel_start>0</blade_rel_start>
-      <blade_flap_angle_max>0</blade_flap_angle_max>
-      <blade_flap_angle_min>0</blade_flap_angle_min>
+        <parent_link>base_link</parent_link>
+        <shaft_link>shaft_template</shaft_link>
+        <blade_link>blade_link_template</blade_link>
+        <flap_joint>flap_joint_template</flap_joint>
 
-      <profile_pitch>1.5</profile_pitch>
-      <profile_chord>0.05</profile_chord>
+        <blade_count>2</blade_count>
+        <blade_rel_start>0</blade_rel_start>
+        <blade_flap_angle_max>0.1</blade_flap_angle_max>
+        <blade_flap_angle_min>0</blade_flap_angle_min>
 
-      <rotor_pitch_max></rotor_pitch_max>
-      <rotor_pitch_min></rotor_pitch_min>
-      <rotor_roll_max></rotor_roll_max>
-      <rotor_roll_min></rotor_roll_min>
-      <!--
-        <initialConditions></initialConditions>
-      -->
-      <test_case></test_case>
-      <test_delay>15</test_delay>
+        <profile_pitch>1.5</profile_pitch>
+        <profile_chord>0.05</profile_chord>
+
+        <rotor_pitch_max>0.9</rotor_pitch_max>
+        <rotor_pitch_min>-0.9</rotor_pitch_min>
+        <rotor_roll_max>0.9</rotor_roll_max>
+        <rotor_roll_min>-0.9</rotor_roll_min>
+
+        <test_case>rotor_control_test</test_case>
+        <test_delay>10</test_delay>
     </plugin>
 
     <plugin name='mavlink_interface' filename='libgazebo_mavlink_interface.so'>
@@ -766,12 +732,6 @@
           <zero_position_armed>0</zero_position_armed>
           <joint_control_type>position_gztopic</joint_control_type>
           <joint_name>roll_dummyjoint</joint_name>
-          <joint_control_pid>
-            <p>100</p>
-            <i>1000</i>
-            <cmdMax>3000</cmdMax>
-            <cmdMin>-3000</cmdMin>
-          </joint_control_pid>
         </channel>
 
         <channel name="pitch_channel">
@@ -783,13 +743,6 @@
           <zero_position_armed>0</zero_position_armed>
           <joint_control_type>position_gztopic</joint_control_type>
           <joint_name>pitch_dummyjoint</joint_name>
-          <joint_control_pid>
-            <p>100</p>
-            <i>100000</i>
-            <cmdMax>300000</cmdMax>
-            <cmdMin>-300000</cmdMin>
-          </joint_control_pid>
-  
         </channel>
 
 

@@ -135,6 +135,32 @@ physics::LinkPtr InsertLinkCopy(
   return new_link;
 }
 
+physics::JointPtr InsertJointCopy(
+    const physics::ModelPtr model, 
+    const physics::JointPtr joint, 
+    const std::string& type, 
+    const std::string& parent,
+    const std::string& child,
+    const std::string& name
+      ){
+
+  physics::JointPtr new_joint = model->GetWorld()->Physics()->CreateJoint(type);
+  sdf::ElementPtr params(new sdf::Element);
+
+  params->Copy(joint->GetSDF()->Clone());
+  params->GetAttribute("name")->Set(name);
+  //params->GetAttribute("parent")->Set(parent);
+  //params->GetAttribute("child")->Set(child);
+
+  gzdbg << "params " << params << "\n" ;
+
+  //new_joint->Load(params);
+ // new_joint->Init();
+ // new_joint->SetRelativePose(pose);
+
+  return new_joint;
+}
+
 }  // namespace gazebo
 
 template <typename T>
