@@ -674,7 +674,7 @@
         <rotor_roll_max>0.9</rotor_roll_max>
         <rotor_roll_min>-0.9</rotor_roll_min>
 
-        <test_case>rotor_control_test</test_case>
+        <test_case></test_case>
         <test_delay>10</test_delay>
     </plugin>
 
