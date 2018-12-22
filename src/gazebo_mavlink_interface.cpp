@@ -108,7 +108,6 @@ void GazeboMavlinkInterface::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf
               gztopic_[index] = "~/" + model_->GetName() + channel->Get<std::string>("gztopic");
             else
               gztopic_[index] = "control_position_gztopic_" + std::to_string(index);
-
       #if GAZEBO_MAJOR_VERSION >= 7 && GAZEBO_MINOR_VERSION >= 4
             /// only gazebo 7.4 and above support Any
             joint_control_pub_[index] = node_handle_->Advertise<gazebo::msgs::Any>(
@@ -308,6 +307,11 @@ void GazeboMavlinkInterface::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf
   if(_sdf->HasElement("vehicle_is_tailsitter"))
   {
     vehicle_is_tailsitter_ = _sdf->GetElement("vehicle_is_tailsitter")->Get<bool>();
+  }
+
+  if(_sdf->HasElement("send_vision_estimation"))
+  {
+    send_vision_estimation_ = _sdf->GetElement("send_vision_estimation")->Get<bool>();
   }
 
   if(_sdf->HasElement("send_odometry"))
@@ -555,14 +559,6 @@ void GazeboMavlinkInterface::ImuCallback(ImuPtr& imu_message) {
 
     sensor_msg.fields_updated = 4095;
 
-    //accumulate gyro measurements that are needed for the optical flow message
-    static uint32_t last_dt_us = sensor_msg.time_usec;
-    uint32_t dt_us = sensor_msg.time_usec - last_dt_us;
-    if (dt_us > 1000) {
-      optflow_gyro += gyro_b * (dt_us / 1000000.0f);
-      last_dt_us = sensor_msg.time_usec;
-    }
-
     mavlink_message_t msg;
     mavlink_msg_hil_sensor_encode_chan(1, 200, MAVLINK_COMM_0, &msg, &sensor_msg);
     if (hil_mode_) {
@@ -638,7 +634,7 @@ void GazeboMavlinkInterface::ImuCallback(ImuPtr& imu_message) {
 void GazeboMavlinkInterface::GpsCallback(GpsPtr& gps_msg){
   // fill HIL GPS Mavlink msg
   mavlink_hil_gps_t hil_gps_msg;
-  hil_gps_msg.time_usec = gps_msg->time() * 1e6;
+  hil_gps_msg.time_usec = gps_msg->time_usec();
   hil_gps_msg.fix_type = 3;
   hil_gps_msg.lat = gps_msg->latitude_deg() * 1e7;
   hil_gps_msg.lon = gps_msg->longitude_deg() * 1e7;
@@ -680,7 +676,7 @@ void GazeboMavlinkInterface::GroundtruthCallback(GtPtr& groundtruth_msg){
 
 void GazeboMavlinkInterface::LidarCallback(LidarPtr& lidar_message) {
   mavlink_distance_sensor_t sensor_msg;
-  sensor_msg.time_boot_ms = lidar_message->time_msec();
+  sensor_msg.time_boot_ms = lidar_message->time_usec() / 1e3;
   sensor_msg.min_distance = lidar_message->min_distance() * 100.0;
   sensor_msg.max_distance = lidar_message->max_distance() * 100.0;
   sensor_msg.current_distance = lidar_message->current_distance() * 100.0;
@@ -699,25 +695,28 @@ void GazeboMavlinkInterface::LidarCallback(LidarPtr& lidar_message) {
 
 void GazeboMavlinkInterface::OpticalFlowCallback(OpticalFlowPtr& opticalFlow_message) {
   mavlink_hil_optical_flow_t sensor_msg;
-#if GAZEBO_MAJOR_VERSION >= 9
-  sensor_msg.time_usec = world_->SimTime().Double() * 1e6;
-#else
-  sensor_msg.time_usec = world_->GetSimTime().Double() * 1e6;
-#endif
+  sensor_msg.time_usec = opticalFlow_message->time_usec();
   sensor_msg.sensor_id = opticalFlow_message->sensor_id();
   sensor_msg.integration_time_us = opticalFlow_message->integration_time_us();
   sensor_msg.integrated_x = opticalFlow_message->integrated_x();
   sensor_msg.integrated_y = opticalFlow_message->integrated_y();
-  sensor_msg.integrated_xgyro = opticalFlow_message->quality() ? -optflow_gyro.Y() : 0.0f;//xy switched
-  sensor_msg.integrated_ygyro = opticalFlow_message->quality() ? optflow_gyro.X() : 0.0f;  //xy switched
-  sensor_msg.integrated_zgyro = opticalFlow_message->quality() ? -optflow_gyro.Z() : 0.0f;//change direction
+
+  bool no_gyro = (ignition::math::isnan(opticalFlow_message->integrated_xgyro())) ||
+                 (ignition::math::isnan(opticalFlow_message->integrated_ygyro())) ||
+                 (ignition::math::isnan(opticalFlow_message->integrated_zgyro()));
+  if(no_gyro) {
+    sensor_msg.integrated_xgyro = NAN;
+    sensor_msg.integrated_ygyro = NAN;
+    sensor_msg.integrated_zgyro = NAN;
+  } else {
+    sensor_msg.integrated_xgyro = opticalFlow_message->quality() ? opticalFlow_message->integrated_xgyro() : 0.0f;
+    sensor_msg.integrated_ygyro = opticalFlow_message->quality() ? opticalFlow_message->integrated_ygyro() : 0.0f;
+    sensor_msg.integrated_zgyro = opticalFlow_message->quality() ? opticalFlow_message->integrated_zgyro() : 0.0f;
+  }
   sensor_msg.temperature = opticalFlow_message->temperature();
   sensor_msg.quality = opticalFlow_message->quality();
   sensor_msg.time_delta_distance_us = opticalFlow_message->time_delta_distance_us();
   sensor_msg.distance = optflow_distance;
-
-  //reset gyro integral
-  optflow_gyro.Set();
 
   mavlink_message_t msg;
   mavlink_msg_hil_optical_flow_encode_chan(1, 200, MAVLINK_COMM_0, &msg, &sensor_msg);
@@ -726,11 +725,7 @@ void GazeboMavlinkInterface::OpticalFlowCallback(OpticalFlowPtr& opticalFlow_mes
 
 void GazeboMavlinkInterface::SonarCallback(SonarPtr& sonar_message) {
   mavlink_distance_sensor_t sensor_msg;
-#if GAZEBO_MAJOR_VERSION >= 9
-  sensor_msg.time_boot_ms = world_->SimTime().Double() * 1e3;
-#else
-  sensor_msg.time_boot_ms = world_->GetSimTime().Double() * 1e3;
-#endif
+  sensor_msg.time_boot_ms = sonar_message->time_usec() / 1e3;
   sensor_msg.min_distance = sonar_message->min_distance() * 100.0;
   sensor_msg.max_distance = sonar_message->max_distance() * 100.0;
   sensor_msg.current_distance = sonar_message->current_distance() * 100.0;
@@ -746,12 +741,7 @@ void GazeboMavlinkInterface::SonarCallback(SonarPtr& sonar_message) {
 
 void GazeboMavlinkInterface::IRLockCallback(IRLockPtr& irlock_message) {
   mavlink_landing_target_t sensor_msg;
-
-#if GAZEBO_MAJOR_VERSION >= 9
-  sensor_msg.time_usec = world_->SimTime().Double() * 1e6;
-#else
-  sensor_msg.time_usec = world_->GetSimTime().Double() * 1e6;
-#endif
+  sensor_msg.time_usec = irlock_message->time_usec() / 1e3;
   sensor_msg.target_num = irlock_message->signature();
   sensor_msg.angle_x = irlock_message->pos_x();
   sensor_msg.angle_y = irlock_message->pos_y();
@@ -774,20 +764,18 @@ void GazeboMavlinkInterface::VisionCallback(OdomPtr& odom_message) {
     odom_message->position().y(),
     odom_message->position().z()));
 
-  // q_gr is the quaternion that represents a rotation from ENU earth/local
-  // frame to XYZ body FLU frame
+  // q_gr is the quaternion that represents the orientation of the vehicle
+  // the ENU earth/local
   ignition::math::Quaterniond q_gr = ignition::math::Quaterniond(
     odom_message->orientation().w(),
     odom_message->orientation().x(),
     odom_message->orientation().y(),
     odom_message->orientation().z());
 
-  // transform orientation from local ENU to body FLU frame
-  ignition::math::Quaterniond q_gb = q_gr * q_br.Inverse();
-  // transform orientation from body FLU to body FRD frame:
-  // q_nb is the quaternion that represents a rotation from NED earth/local
-  // frame to XYZ body FRD frame
-  ignition::math::Quaterniond q_nb = q_ng * q_gb;
+  // transform the vehicle orientation from the ENU to the NED frame
+  // q_nb is the quaternion that represents the orientation of the vehicle
+  // the NED earth/local
+  ignition::math::Quaterniond q_nb = q_ng * q_gr * q_ng.Inverse();
 
   // transform linear velocity from local ENU to body FRD frame
   ignition::math::Vector3d linear_velocity = q_ng.RotateVector(
@@ -807,7 +795,7 @@ void GazeboMavlinkInterface::VisionCallback(OdomPtr& odom_message) {
     // send ODOMETRY Mavlink msg
     mavlink_odometry_t odom;
 
-    odom.time_usec = odom_message->usec();
+    odom.time_usec = odom_message->time_usec();
 
     odom.frame_id = MAV_FRAME_VISION_NED;
     odom.child_frame_id = MAV_FRAME_BODY_FRD;
@@ -847,11 +835,11 @@ void GazeboMavlinkInterface::VisionCallback(OdomPtr& odom_message) {
     mavlink_msg_odometry_encode_chan(1, 200, MAVLINK_COMM_0, &msg, &odom);
     send_mavlink_message(&msg);
   }
-  else {
+  else if (send_vision_estimation_) {
     // send VISION_POSITION_ESTIMATE Mavlink msg
     mavlink_vision_position_estimate_t vision;
 
-    vision.usec = odom_message->usec();
+    vision.usec = odom_message->time_usec();
 
     // transform position from local ENU to local NED frame
     vision.x = position.X();
@@ -979,7 +967,6 @@ void GazeboMavlinkInterface::handle_control(double _dt)
         double err = current - target;
         double force = pids_[i].Update(err, _dt);
         joints_[i]->SetForce(0, force);
-        //gzdbg << "J[" << i << "] F: " << force << " om: " << joints_[i]->GetVelocity(0) << "\n";
       }
       else if (joint_control_type_[i] == "position_gztopic")
       {
@@ -988,7 +975,6 @@ void GazeboMavlinkInterface::handle_control(double _dt)
         gazebo::msgs::Any m;
         m.set_type(gazebo::msgs::Any_ValueType_DOUBLE);
         m.set_double_value(target);
-       // gzdbg << "target " << target << "\n";
      #else
         std::stringstream ss;
         gazebo::msgs::GzString m;

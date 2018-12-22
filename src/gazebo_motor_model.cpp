@@ -188,7 +188,7 @@ void GazeboMotorModel::MotorFailureCallback(const boost::shared_ptr<const msgs::
 void GazeboMotorModel::UpdateForcesAndMoments() {
   motor_rot_vel_ = joint_->GetVelocity(0);
   if (motor_rot_vel_ / (2 * M_PI) > 1 / (2 * sampling_time_)) {
-    gzerr << "Aliasing on motor [" << motor_number_ << "] might occur. Consider making smaller simulation time steps or raising the rotor_velocity_slowdown_sim_ param. Omega" << motor_rot_vel_ << " ts: " << sampling_time_ << "\n";
+    gzerr << "Aliasing on motor [" << motor_number_ << "] might occur. Consider making smaller simulation time steps or raising the rotor_velocity_slowdown_sim_ param.\n";
   }
   double real_motor_velocity = motor_rot_vel_ * rotor_velocity_slowdown_sim_;
   double force = real_motor_velocity * real_motor_velocity * motor_constant_;
@@ -206,7 +206,6 @@ void GazeboMotorModel::UpdateForcesAndMoments() {
   scalar = ignition::math::clamp(scalar, 0.0, 1.0);
   // Apply a force to the link.
   link_->AddRelativeForce(ignition::math::Vector3d(0, 0, force * scalar));
-  //gzdbg << "Motor F: " << force * scalar << "\n";
 
   // Forces from Philppe Martin's and Erwan Salaün's
   // 2010 IEEE Conference on Robotics and Automation paper

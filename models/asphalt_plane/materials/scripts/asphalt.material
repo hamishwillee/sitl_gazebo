@@ -13,7 +13,7 @@ material vrc/asphalt
 				texture tarmac.png
 				filtering anistropic
 				max_anisotropy 16
-				scale 0.05 0.05
+				scale 0.1 0.1
 			}
 		}
 	}
