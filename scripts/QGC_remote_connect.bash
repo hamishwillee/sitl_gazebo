@@ -7,12 +7,12 @@
 #
 
 ## create named pipe on remote machine (delete a named file aready exists)
-#ssh $1 [ -e /tmp/udp2tcp ] && rm /tmp/udp2tcp
-#ssh $1 mkfifo /tmp/udp2tcp
+ssh $1 rm /tmp/udp2tcp
+ssh $1 mkfifo /tmp/udp2tcp
 
 ## create named pipe on local machine (delete a named file aready exists)
-#[ -e /tmp/udp2tcp ] && rm /tmp/udp2tcp
-#mkfifo /tmp/udp2tcp
+rm /tmp/udp2tcp
+mkfifo /tmp/udp2tcp
 
 
 ## start translation of UDP packets to TCP packets on local machine side.
