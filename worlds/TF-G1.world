@@ -10,9 +10,9 @@
       <uri>model://ground_plane</uri>
     </include>
     <!-- An asphalt plane -->
-    <include>
+    <!-- <include>
       <uri>model://asphalt_plane</uri>
-    </include>
+    </include> -->
    <include>
       <uri>model://autogyro</uri>
     </include>
@@ -60,18 +60,22 @@
 
 
     <scene>
-      <ambient>50 50 50</ambient>
+      <ambient>60 60 60</ambient>
       <background>20 20 20</background>
       <shadows>false</shadows>
       <sky>
-        <time>12</time>
+        <time>15</time>
+        <clouds>
+            <speed>0</speed>
+            <mean_size>0</mean_size>
+        </clouds>
       </sky>
     </scene>
     <gui fullscreen='0'>
       <camera name='user_camera'>
         <view_controller>orbit</view_controller>
         <projection_type>perspective</projection_type>
-        
+
 <!--         <track_visual>
           <name>autogyro</name>
           <use_model_frame>true</use_model_frame>
@@ -81,7 +85,7 @@
 	        <xyz> -4 0 0.5</xyz>
           <inherit_yaw>true</inherit_yaw>
         </track_visual> -->
-      
+
       </camera>
     </gui>
   </world>

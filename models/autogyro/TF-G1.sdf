@@ -410,7 +410,7 @@
         <use_parent_model_frame>1</use_parent_model_frame>
       </axis>
     </joint>
-    
+
     <link name='pitch-dummylink'>
       <pose>0 0 0.47 0 0 0</pose>
       <visual name="rotor_cyl_visual">
@@ -434,7 +434,7 @@
         </inertia>
       </inertial>
 
-    </link> 
+    </link>
 
     <joint name='roll_dummyjoint' type='revolute'>
       <child>roll-dummylink</child>
@@ -445,7 +445,7 @@
         <use_parent_model_frame>1</use_parent_model_frame>
       </axis>
     </joint>
-    
+
     <link name='roll-dummylink'>
       <pose>0 0 0.47 0 0 0</pose>
       <inertial>
@@ -459,7 +459,7 @@
           <izz>0.001</izz>
         </inertia>
       </inertial>
-    </link> 
+    </link>
 
 
 <!-- Old multi-joint rotor
@@ -476,7 +476,7 @@
          <use_parent_model_frame>1</use_parent_model_frame>
       </axis>
     </joint>
-  
+
     <joint name='rotor_roll_joint' type='revolute'>
       <parent>base_link</parent>
       <child>rotor_roll_connector</child>
@@ -570,9 +570,9 @@
       <commandSubTopic>/gazebo/command/motor_speed</commandSubTopic>
       <motorNumber>4</motorNumber>
       <rotorDragCoefficient>8.06428e-05</rotorDragCoefficient>
-      <rollingMomentCoefficient>1e-06</rollingMomentCoefficient>
-      <motorSpeedPubTopic>/motor_speed/4</motorSpeedPubTopic>
-      <rotorVelocitySlowdownSim>20</rotorVelocitySlowdownSim>
+      <rollingMomentCoefficient>1e-08</rollingMomentCoefficient>
+      <motorSpeedPubTopic>/motor_speed/0</motorSpeedPubTopic>
+      <rotorVelocitySlowdownSim>100</rotorVelocitySlowdownSim>
     </plugin>
 
     <plugin name='gazebo_imu_plugin' filename='libgazebo_imu_plugin.so'>
@@ -746,7 +746,7 @@
         </channel>
 
 
-<!-- Testing other channnels 
+<!-- Testing other channnels
         <channel name="test5">
           <input_index>5</input_index>
           <input_offset>0</input_offset>
@@ -800,7 +800,7 @@
           <joint_control_type>position_kinematic</joint_control_type>
           <joint_name>right_rudder_joint</joint_name>
         </channel>
-      
+
       </control_channels>
     </plugin>
     <static>0</static>
