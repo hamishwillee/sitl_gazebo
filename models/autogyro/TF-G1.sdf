@@ -296,7 +296,22 @@
       <velocity_decay/>
       <self_collide>0</self_collide>
     </link>
-
+    <joint name='propeller_joint' type='revolute'>
+      <child>propeller</child>
+      <parent>base_link</parent>
+      <axis>
+        <xyz>1 0 0</xyz>
+        <limit>
+          <lower>-1e+16</lower>
+          <upper>1e+16</upper>
+        </limit>
+        <dynamics>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+        <use_parent_model_frame>1</use_parent_model_frame>
+      </axis>
+    </joint>
 <!--
     <link name="rotor_pitch_connector">
       <pose>0 0 0.42 0 0 0</pose>
@@ -446,22 +461,6 @@
       </physics>
     </joint>
 
-    <joint name='propeller_joint' type='revolute'>
-      <child>propeller</child>
-      <parent>base_link</parent>
-      <axis>
-        <xyz>1 0 0</xyz>
-        <limit>
-          <lower>-1e+16</lower>
-          <upper>1e+16</upper>
-        </limit>
-        <dynamics>
-          <spring_reference>0</spring_reference>
-          <spring_stiffness>0</spring_stiffness>
-        </dynamics>
-        <use_parent_model_frame>1</use_parent_model_frame>
-      </axis>
-    </joint>
 
 <!-- Mavlink interface doesn't work without these dummy elements -->
     <joint name='pitch_dummyjoint' type='revolute'>
@@ -473,7 +472,7 @@
         <use_parent_model_frame>1</use_parent_model_frame>
       </axis>
     </joint>
-    
+
     <link name='pitch-dummylink'>
       <pose>0 0 0.48 0 0 0</pose>
       <visual name="rotor_cyl_visual">
@@ -485,7 +484,7 @@
           </cylinder>
         </geometry>
       </visual>
-    </link> 
+    </link>
 
     <joint name='roll_dummyjoint' type='revolute'>
       <child>roll-dummylink</child>
@@ -496,7 +495,7 @@
         <use_parent_model_frame>1</use_parent_model_frame>
       </axis>
     </joint>
-    
+
     <link name='roll-dummylink'>
       <pose>0 0 0.48 0 0 0</pose>
       <visual name="rotor_cyl_visual">
@@ -508,7 +507,7 @@
           </cylinder>
         </geometry>
       </visual>
-    </link> 
+    </link>
 
 
 <!-- Old multi-joint rotor
@@ -525,7 +524,7 @@
          <use_parent_model_frame>1</use_parent_model_frame>
       </axis>
     </joint>
-  
+
     <joint name='rotor_roll_joint' type='revolute'>
       <parent>base_link</parent>
       <child>rotor_roll_connector</child>
@@ -729,7 +728,7 @@
       <control_channels>
 
         <channel name="propeller">
-          <input_index>4</input_index>
+          <input_index>0</input_index>
           <input_offset>0</input_offset>
           <input_scaling>3500</input_scaling>
           <zero_position_disarmed>0</zero_position_disarmed>
@@ -789,11 +788,11 @@
             <cmdMax>300000</cmdMax>
             <cmdMin>-300000</cmdMin>
           </joint_control_pid>
-  
+
         </channel>
 
 
-<!-- Testing other channnels 
+<!-- Testing other channnels
         <channel name="test5">
           <input_index>5</input_index>
           <input_offset>0</input_offset>
@@ -847,7 +846,7 @@
           <joint_control_type>position_kinematic</joint_control_type>
           <joint_name>right_rudder_joint</joint_name>
         </channel>
-      
+
       </control_channels>
     </plugin>
     <static>0</static>

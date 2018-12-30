@@ -10,9 +10,9 @@
       <uri>model://ground_plane</uri>
     </include>
     <!-- An asphalt plane -->
-    <include>
+    <!-- <include>
       <uri>model://asphalt_plane</uri>
-    </include>
+    </include> -->
    <include>
       <uri>model://autogyro</uri>
     </include>
@@ -44,7 +44,7 @@
       <ode>
         <solver>
           <type>quick</type>
-          <iters>500</iters>
+          <iters>100</iters>
         </solver>
       </ode>
       <max_step_size>0.001</max_step_size>
@@ -60,11 +60,15 @@
 
 
     <scene>
-      <ambient>50 50 50</ambient>
-      <background>20 20 20</background>
+      <ambient>60 60 60</ambient>
+      <background>40 40 40</background>
       <shadows>false</shadows>
       <sky>
         <time>12</time>
+        <clouds>
+            <speed>0</speed>
+            <mean_size>0</mean_size>
+        </clouds>
       </sky>
     </scene>
     <gui fullscreen='0'>
