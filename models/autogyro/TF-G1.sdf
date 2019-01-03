@@ -109,7 +109,7 @@
       </axis>
     </joint>
 
-    <link name="left_front_wheel">
+      <link name="left_front_wheel">
       <pose> 0.16 0.22 -0.095 1.5707 1.5707</pose>
        <inertial>
         <pose>0 0 0 0 0 0</pose>
@@ -130,17 +130,24 @@
               <length>.025</length>
             </cylinder>
           </geometry>
+        <max_contacts>1</max_contacts>
         <surface>
           <friction>
             <ode>
-              <mu>0.1</mu>
-              <mu2>0.01</mu2>
-              <slip1>0</slip1>
-              <slip2>0</slip2>
+              <mu>1.0</mu>
+              <mu2>1.0</mu2>
+              <fdir1>0 0 1</fdir1>
+              <slip1>0.0</slip1>
+              <slip2>0.0</slip2>
             </ode>
           </friction>
+          <contact>
+            <ode>
+              <min_depth>0.005</min_depth>
+              <kp>1e8</kp>
+            </ode>
+          </contact>
         </surface>
-
       </collision>
       <visual name="left_front_wheel_visual">
         <geometry>
@@ -151,6 +158,7 @@
           </geometry>
       </visual>
     </link>
+
     <joint name="left_front_wheel_joint" type="revolute">
       <pose>0 0 0 0 0 0 </pose>
       <child>left_front_wheel</child>
@@ -173,14 +181,24 @@
               <radius>.05</radius>
               <length>.025</length>
             </cylinder>
-          </geometry>
+        </geometry>
+        <max_contacts>1</max_contacts>
         <surface>
           <friction>
             <ode>
-               <mu>0.1</mu>
-              <mu2>0.01</mu2>
+              <mu>1.0</mu>
+              <mu2>1.0</mu2>
+              <fdir1>0 0 1</fdir1>
+              <slip1>0.0</slip1>
+              <slip2>0.0</slip2>
             </ode>
           </friction>
+          <contact>
+            <ode>
+              <min_depth>0.005</min_depth>
+              <kp>1e8</kp>
+            </ode>
+          </contact>
         </surface>
       </collision>
       <visual name="right_front_wheel_visual">
