@@ -6,7 +6,7 @@
       <inertial>
         <!-- subtracted wheel weights from dry weight of 771 kg -->
         <!-- http://www.polaris.com/en-us/ranger-utv/side-by-sides/ranger-ev/specifications -->
-        <mass>720.0</mass>
+        <mass>720</mass>
         <inertia>
           <ixx>140</ixx>
           <ixy>0.0</ixy>
